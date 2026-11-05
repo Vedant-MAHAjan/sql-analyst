@@ -1,0 +1,19 @@
+config_hash: 44f7d57b8311
+dataset: bird
+evidence: true
+linking:
+  describe: false
+  max_tables: 5
+  min_table_score: 0.3
+  mode: table
+model:
+  model: qwen2.5-coder:14b
+  options:
+    num_ctx: 8192
+    seed: 0
+    temperature: 0.0
+  provider: ollama
+name: linked-evidence
+prompt_version: linked-v1
+sample: null
+seed: 0

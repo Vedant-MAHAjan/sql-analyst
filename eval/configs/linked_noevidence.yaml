@@ -1,0 +1,9 @@
+# Phase 2: schema linking (table level, FK bridges, matched values).
+name: linked-noevidence
+dataset: bird
+evidence: false
+linking: {mode: table, max_tables: 5, min_table_score: 0.3, describe: false}
+model:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  options: {temperature: 0.0, seed: 0, num_ctx: 8192}

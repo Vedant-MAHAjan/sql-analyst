@@ -1,0 +1,62 @@
+{
+ "all": {
+  "n": 500,
+  "ex": 31.2,
+  "ex_tol": 33.2,
+  "soft_f1": 31.1,
+  "exec_error_rate": 14.2,
+  "latency_p50_s": 3.5,
+  "latency_p95_s": 7.67,
+  "input_tokens_mean": 500,
+  "output_tokens_mean": 57,
+  "cost_usd": 0.0
+ },
+ "simple": {
+  "n": 148,
+  "ex": 47.3,
+  "ex_tol": 49.32,
+  "soft_f1": 47.27,
+  "exec_error_rate": 4.05,
+  "latency_p50_s": 2.82,
+  "latency_p95_s": 6.19,
+  "input_tokens_mean": 477,
+  "output_tokens_mean": 41,
+  "cost_usd": 0.0
+ },
+ "moderate": {
+  "n": 250,
+  "ex": 25.2,
+  "ex_tol": 26.8,
+  "soft_f1": 26.53,
+  "exec_error_rate": 17.2,
+  "latency_p50_s": 3.61,
+  "latency_p95_s": 7.66,
+  "input_tokens_mean": 519,
+  "output_tokens_mean": 58,
+  "cost_usd": 0.0
+ },
+ "challenging": {
+  "n": 102,
+  "ex": 22.55,
+  "ex_tol": 25.49,
+  "soft_f1": 18.85,
+  "exec_error_rate": 21.57,
+  "latency_p50_s": 4.07,
+  "latency_p95_s": 10.05,
+  "input_tokens_mean": 485,
+  "output_tokens_mean": 78,
+  "cost_usd": 0.0
+ },
+ "error_types": {
+  "undefined_column": 22,
+  "undefined_function": 12,
+  "undefined_table": 11,
+  "grouping_error": 9,
+  "division_by_zero": 6,
+  "syntax_error": 6,
+  "ambiguous_column": 2,
+  "invalid_column_reference": 1,
+  "cannot_coerce": 1,
+  "invalid_text_representation": 1
+ }
+}

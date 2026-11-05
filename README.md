@@ -4,8 +4,8 @@ A text-to-SQL analyst agent over PostgreSQL, evaluated against ground truth
 on BIRD Mini-Dev, with a held-out set on a public non-BIRD database. Models
 run locally through Ollama.
 
-Status: **Phases 0–1 done** (see [progress.md](progress.md)). Phase 2
-(schema linking and value retrieval) next.
+Status: **Phases 0–2 done** (see [progress.md](progress.md)). Phase 3
+(generate, validate, execute, repair) next.
 
 ## Setup
 
@@ -36,6 +36,26 @@ whole schema in the prompt, one call. EX is scored exactly as BIRD scores it
 
 For reference, BIRD's published Mini-Dev PostgreSQL baselines are 35.8 (GPT-4)
 and 36.0 (GPT-4 Turbo), with hints. Summaries: [reports/phase1](reports/phase1).
+
+## Schema linking (Phase 2)
+
+Table-level linking (up to 5 tables plus join-path bridges) with trigram
+value matches noted beside their columns. Schema recall: share of questions
+whose gold SQL columns are all in the linked schema.
+
+| Config | Schema recall | Prompt size vs whole | EX | Paired vs baseline |
+|---|---|---|---|---|
+| Linked, with hints | 96.4% | 0.72× | 51.0 (+3.6) | p = 0.013 |
+| Linked + BIRD descriptions, with hints | 96.4% | 2.05× | 50.8 (+3.4) | p = 0.06 |
+| Linked, without hints | 76.6% | — | 31.2 (+7.0) | p < 0.001 |
+
+```bash
+.venv/bin/python -m agent.value_index build        # once, ~30 s
+.venv/bin/python -m eval.schema_recall             # recall + prompt size
+.venv/bin/python -m eval.runner eval/configs/linked_evidence.yaml
+```
+
+Summaries: [reports/phase2](reports/phase2).
 
 ## Held-out set
 
