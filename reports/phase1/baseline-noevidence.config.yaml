@@ -1,0 +1,14 @@
+config_hash: 73342447ba29
+dataset: bird
+evidence: false
+model:
+  model: qwen2.5-coder:14b
+  options:
+    num_ctx: 8192
+    seed: 0
+    temperature: 0.0
+  provider: ollama
+name: baseline-noevidence
+prompt_version: baseline-v1
+sample: null
+seed: 0

@@ -1,2 +1,3 @@
 psycopg[binary]>=3.2,<4
 sqlglot>=25,<27
+PyYAML>=6,<7

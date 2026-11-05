@@ -1,0 +1,8 @@
+# Phase 1 baseline: whole schema, one call, no evidence hints.
+name: baseline-noevidence
+dataset: bird
+evidence: false
+model:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  options: {temperature: 0.0, seed: 0, num_ctx: 8192}

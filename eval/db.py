@@ -6,11 +6,19 @@ import psycopg
 DSN = os.environ.get(
     "BIRD_DSN", "postgresql://postgres:postgres@127.0.0.1:5433/bird"
 )
+DSNS = {
+    "bird": DSN,
+    "pagila": os.environ.get("PAGILA_DSN", DSN.rsplit("/", 1)[0] + "/pagila"),
+}
 
 
-def connect(dsn: str = DSN, timeout_ms: int = 30_000) -> psycopg.Connection:
+def connect(
+    dsn: str = DSN, timeout_ms: int = 30_000, read_only: bool = False
+) -> psycopg.Connection:
     conn = psycopg.connect(dsn, autocommit=True)
     conn.execute(f"SET statement_timeout = {int(timeout_ms)}")
+    if read_only:
+        conn.execute("SET default_transaction_read_only = on")
     return conn
 
 

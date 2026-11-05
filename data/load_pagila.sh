@@ -17,6 +17,9 @@ fi
 psql -d postgres -qc "CREATE DATABASE pagila"
 # Gold answers bucket timestamptz by month; pin the zone so they are stable.
 psql -d postgres -qc "ALTER DATABASE pagila SET timezone = 'UTC'"
+# Deterministic float aggregation and row order (see docker/initdb).
+psql -d postgres -qc "ALTER DATABASE pagila SET max_parallel_workers_per_gather = 0"
+psql -d postgres -qc "ALTER DATABASE pagila SET synchronize_seqscans = off"
 psql -d pagila -qc "CREATE EXTENSION IF NOT EXISTS pg_trgm"
 # Pagila's schema assigns ownership to role "postgres", which exists here.
 psql -d pagila -q -v ON_ERROR_STOP=1 < "$DIR/pagila-schema.sql" >/dev/null
