@@ -23,3 +23,11 @@
 3. Schema recall (sqlglot-resolved gold columns all present): **96.4%** with hints at 72% of the whole-schema prompt size (target ≥95%); 76.6% without hints; column-level pruning fell to 83–87%, so linking stays table-level.
 4. EX with hints rose 47.4 → **51.0** (McNemar p = 0.013); without hints 24.2 → **31.2** (p < 0.001), driven by matched values such as 'Bahrain Grand Prix' → `races.name`.
 5. BIRD column descriptions did not help (50.8, p = 0.06 vs baseline) and doubled the prompt, so they are off by default; remaining errors are mostly SQLite functions and text-vs-number comparisons, which Phase 3 targets.
+
+## Phase 3 — Generate, validate, execute, repair (done, 2026-11-05)
+
+1. Model SQL now runs as a read-only `analyst_ro` role (SELECT only, read-only transactions, 30 s timeout, no access to the `retrieval` schema); writes and temp tables are refused by the database itself.
+2. sqlglot validator (one statement, SELECT/WITH only, tables on the database's allowlist, denylist incl. `pg_sleep`, `set_config`, `query_to_xml`) passes all 540 gold queries and blocks every write and escape attempt tried, including a `DELETE` hidden in a CTE.
+3. Structured output (SQL, assumptions, abstain) plus a repair loop that feeds PostgreSQL's error, position and hint back at most twice: execution-error rate **11.6% → 3.0%**, EX **49.8 → 51.8** (repair fixed 10, broke 0; p = 0.002).
+4. Repair makes 43 of 58 failing queries run but only 10 correct: unknown columns 13 run / 4 correct, grouping errors 9 / 2, SQLite functions 8 / 2; it cannot fix MySQL-style backticks, because sqlglot's parse message is less useful than PostgreSQL's.
+5. Net vs Phase 2 linking is +0.8 EX (not significant, p = 0.77): the structured-output prompt costs ~1 point on the first attempt and triples output tokens (p50 latency 4.8 → 7.9 s); vs the Phase 1 baseline it is +4.4 (p = 0.017).

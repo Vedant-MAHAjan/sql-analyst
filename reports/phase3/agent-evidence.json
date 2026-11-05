@@ -1,0 +1,136 @@
+{
+ "all": {
+  "n": 500,
+  "ex": 51.8,
+  "ex_tol": 56.0,
+  "soft_f1": 53.07,
+  "exec_error_rate": 3.0,
+  "latency_p50_s": 7.94,
+  "latency_p95_s": 24.63,
+  "input_tokens_mean": 918,
+  "output_tokens_mean": 173,
+  "cost_usd": 0.0
+ },
+ "simple": {
+  "n": 148,
+  "ex": 68.92,
+  "ex_tol": 70.95,
+  "soft_f1": 68.1,
+  "exec_error_rate": 1.35,
+  "latency_p50_s": 5.98,
+  "latency_p95_s": 12.02,
+  "input_tokens_mean": 701,
+  "output_tokens_mean": 107,
+  "cost_usd": 0.0
+ },
+ "moderate": {
+  "n": 250,
+  "ex": 48.8,
+  "ex_tol": 52.4,
+  "soft_f1": 51.56,
+  "exec_error_rate": 2.4,
+  "latency_p50_s": 8.6,
+  "latency_p95_s": 21.3,
+  "input_tokens_mean": 925,
+  "output_tokens_mean": 172,
+  "cost_usd": 0.0
+ },
+ "challenging": {
+  "n": 102,
+  "ex": 34.31,
+  "ex_tol": 43.14,
+  "soft_f1": 34.95,
+  "exec_error_rate": 6.86,
+  "latency_p50_s": 11.55,
+  "latency_p95_s": 41.19,
+  "input_tokens_mean": 1215,
+  "output_tokens_mean": 269,
+  "cost_usd": 0.0
+ },
+ "error_types": {
+  "grouping_error": 3,
+  "invalid_parse_error": 3,
+  "undefined_column": 3,
+  "abstain": 2,
+  "undefined_table": 2,
+  "cardinality_violation": 1,
+  "timeout": 1
+ },
+ "first_attempt": {
+  "ex": 49.8,
+  "exec_error_rate": 11.6
+ },
+ "abstain_rate": 0.4,
+ "repair": {
+  "undefined_column": {
+   "n": 18,
+   "fixed_exec": 13,
+   "fixed_correct": 4
+  },
+  "grouping_error": {
+   "n": 11,
+   "fixed_exec": 9,
+   "fixed_correct": 2
+  },
+  "undefined_function": {
+   "n": 9,
+   "fixed_exec": 8,
+   "fixed_correct": 2
+  },
+  "ambiguous_column": {
+   "n": 4,
+   "fixed_exec": 3,
+   "fixed_correct": 0
+  },
+  "invalid_parse_error": {
+   "n": 3,
+   "fixed_exec": 1,
+   "fixed_correct": 0
+  },
+  "undefined_table": {
+   "n": 3,
+   "fixed_exec": 2,
+   "fixed_correct": 0
+  },
+  "cardinality_violation": {
+   "n": 2,
+   "fixed_exec": 1,
+   "fixed_correct": 1
+  },
+  "syntax_error": {
+   "n": 2,
+   "fixed_exec": 2,
+   "fixed_correct": 1
+  },
+  "abstain": {
+   "n": 1,
+   "fixed_exec": 0,
+   "fixed_correct": 0
+  },
+  "division_by_zero": {
+   "n": 1,
+   "fixed_exec": 1,
+   "fixed_correct": 0
+  },
+  "invalid_column_reference": {
+   "n": 1,
+   "fixed_exec": 1,
+   "fixed_correct": 0
+  },
+  "cannot_coerce": {
+   "n": 1,
+   "fixed_exec": 1,
+   "fixed_correct": 0
+  },
+  "timeout": {
+   "n": 1,
+   "fixed_exec": 0,
+   "fixed_correct": 0
+  },
+  "invalid_unknown_table": {
+   "n": 1,
+   "fixed_exec": 1,
+   "fixed_correct": 0
+  }
+ }
+}

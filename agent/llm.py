@@ -22,12 +22,15 @@ class OllamaClient:
         self.options = {"temperature": temperature, "seed": seed, "num_ctx": num_ctx}
 
     def complete(self, system: str, user: str, json_schema: dict | None = None) -> Completion:
+        return self.chat([{"role": "system", "content": system},
+                          {"role": "user", "content": user}], json_schema)
+
+    def chat(self, messages: list[dict], json_schema: dict | None = None) -> Completion:
         body = {
             "model": self.model,
             "stream": False,
             "options": self.options,
-            "messages": [{"role": "system", "content": system},
-                         {"role": "user", "content": user}],
+            "messages": messages,
         }
         if json_schema:
             body["format"] = json_schema

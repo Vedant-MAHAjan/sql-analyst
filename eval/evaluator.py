@@ -23,6 +23,8 @@ class Exec:
     error_type: str = ""
     error: str = ""
     ms: int = 0
+    hint: str = ""
+    position: int = 0
 
 
 def _snake(name: str) -> str:
@@ -44,9 +46,12 @@ def execute(conn: psycopg.Connection, sql: str) -> Exec:
     except psycopg.errors.QueryCanceled:
         return Exec("timeout", error_type="timeout", ms=_ms(start))
     except psycopg.Error as exc:
-        msg = (getattr(exc.diag, "message_primary", None) or str(exc)).splitlines()
+        diag = exc.diag
+        msg = (getattr(diag, "message_primary", None) or str(exc)).splitlines()
         return Exec("error", error_type=_snake(type(exc).__name__),
-                    error=msg[0] if msg else "", ms=_ms(start))
+                    error=msg[0] if msg else "", ms=_ms(start),
+                    hint=getattr(diag, "message_hint", None) or "",
+                    position=int(getattr(diag, "statement_position", None) or 0))
     return Exec("ok", rows, ms=_ms(start))
 
 
@@ -72,6 +77,8 @@ def _norm(v):
         return v.isoformat()
     if isinstance(v, str):
         return v.rstrip()
+    if isinstance(v, list):  # PostgreSQL arrays
+        return tuple(_norm(x) for x in v)
     return v
 
 
@@ -105,8 +112,9 @@ def soft_f1(pred: list, gold: list) -> float:
 def score(pred: Exec, gold_rows: list) -> dict:
     if pred.status != "ok":
         return {"ex": 0, "ex_tol": 0, "soft_f1": 0.0}
-    return {
-        "ex": ex(pred.rows, gold_rows),
-        "ex_tol": ex_tol(pred.rows, gold_rows),
-        "soft_f1": soft_f1(pred.rows, gold_rows),
-    }
+    try:
+        official = {"ex": ex(pred.rows, gold_rows), "soft_f1": soft_f1(pred.rows, gold_rows)}
+    except TypeError:
+        # Array values are unhashable; BIRD's scripts raise here and score 0.
+        official = {"ex": 0, "soft_f1": 0.0}
+    return {**official, "ex_tol": ex_tol(pred.rows, gold_rows)}

@@ -1,0 +1,10 @@
+# Phase 3: linked schema + structured output + validator + repair (max 2).
+name: agent-evidence
+dataset: bird
+evidence: true
+linking: {mode: table, max_tables: 5, min_table_score: 0.3, describe: false}
+agent: {repair_max: 2, validate: true}
+model:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  options: {temperature: 0.0, seed: 0, num_ctx: 8192}

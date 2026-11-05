@@ -1,0 +1,22 @@
+agent:
+  repair_max: 2
+  validate: true
+config_hash: 4cf3303a699b
+dataset: bird
+evidence: true
+linking:
+  describe: false
+  max_tables: 5
+  min_table_score: 0.3
+  mode: table
+model:
+  model: qwen2.5-coder:14b
+  options:
+    num_ctx: 8192
+    seed: 0
+    temperature: 0.0
+  provider: ollama
+name: agent-evidence
+prompt_version: agent-v1
+sample: null
+seed: 0

@@ -4,8 +4,8 @@ A text-to-SQL analyst agent over PostgreSQL, evaluated against ground truth
 on BIRD Mini-Dev, with a held-out set on a public non-BIRD database. Models
 run locally through Ollama.
 
-Status: **Phases 0–2 done** (see [progress.md](progress.md)). Phase 3
-(generate, validate, execute, repair) next.
+Status: **Phases 0–3 done** (see [progress.md](progress.md)). Phase 4
+(answer layer and interfaces) next.
 
 ## Setup
 
@@ -56,6 +56,21 @@ whose gold SQL columns are all in the linked schema.
 ```
 
 Summaries: [reports/phase2](reports/phase2).
+
+## Validate, execute, repair (Phase 3)
+
+Model SQL is checked by a sqlglot validator and run as the read-only
+`analyst_ro` role; on a database error the error, position and hint go back
+to the model, at most twice. With hints, linked schema:
+
+| | EX | Execution errors |
+|---|---|---|
+| First attempt | 49.8 | 11.6% |
+| After repair (max 2) | **51.8** | **3.0%** |
+
+Repair fixed 10 questions and broke none (p = 0.002), but most repaired
+queries run without becoming correct (43 of 58 run, 10 correct). Summary:
+[reports/phase3](reports/phase3).
 
 ## Held-out set
 

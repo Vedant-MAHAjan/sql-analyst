@@ -10,6 +10,10 @@ DSNS = {
     "bird": DSN,
     "pagila": os.environ.get("PAGILA_DSN", DSN.rsplit("/", 1)[0] + "/pagila"),
 }
+# Model-written SQL runs as the read-only analyst role.
+_ANALYST = os.environ.get(
+    "ANALYST_DSN_BASE", "postgresql://analyst_ro:analyst_ro@127.0.0.1:5433")
+ANALYST_DSNS = {"bird": f"{_ANALYST}/bird", "pagila": f"{_ANALYST}/pagila"}
 
 
 def connect(
