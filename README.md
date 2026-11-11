@@ -4,8 +4,8 @@ A text-to-SQL analyst agent over PostgreSQL, evaluated against ground truth
 on BIRD Mini-Dev, with a held-out set on a public non-BIRD database. Models
 run locally through Ollama.
 
-Status: **Phases 0–3 done** (see [progress.md](progress.md)). Phase 4
-(answer layer and interfaces) next.
+Status: **Phases 0–4 done** (see [progress.md](progress.md)). Phase 5
+(guardrails and attack suite) next.
 
 ## Setup
 
@@ -71,6 +71,20 @@ to the model, at most twice. With hints, linked schema:
 Repair fixed 10 questions and broke none (p = 0.002), but most repaired
 queries run without becoming correct (43 of 58 run, 10 correct). Summary:
 [reports/phase3](reports/phase3).
+
+## Using it (Phase 4)
+
+```bash
+.venv/bin/uvicorn serve.api:app --port 8008      # web page at http://localhost:8008
+.venv/bin/python serve/mcp_server.py              # MCP server (stdio)
+claude mcp add sql-analyst -- "$PWD/.venv/bin/python" "$PWD/serve/mcp_server.py"
+```
+
+The page shows the answer, a chart picked from the result's shape, the rows,
+and the SQL with the model's assumptions and any repair attempts. The MCP
+server exposes `list_databases`, `describe_schema` and `ask`. Results are
+capped at 1,000 rows at fetch time (no `LIMIT` is injected), and at most 50
+rows ever go back to the model.
 
 ## Held-out set
 

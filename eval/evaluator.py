@@ -25,6 +25,8 @@ class Exec:
     ms: int = 0
     hint: str = ""
     position: int = 0
+    columns: list = field(default_factory=list)
+    truncated: bool = False
 
 
 def _snake(name: str) -> str:

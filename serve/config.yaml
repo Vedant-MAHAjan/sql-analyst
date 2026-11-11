@@ -1,0 +1,8 @@
+# Serving config: the Phase 3 agent (linked schema, validator, repair).
+linking: {mode: table, max_tables: 5, min_table_score: 0.3}
+repair_max: 2
+max_rows: 1000
+model:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  options: {temperature: 0.0, seed: 0, num_ctx: 8192}

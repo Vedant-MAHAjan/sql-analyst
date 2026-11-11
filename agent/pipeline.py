@@ -48,7 +48,8 @@ def _feedback(att: Attempt) -> str:
 
 def answer(chat: Callable[[list[dict]], Completion], conn: psycopg.Connection,
            allowed_tables: set[str], schema_text: str, question: str,
-           evidence: str | None, repair_max: int = 2, validate_sql: bool = True) -> Result:
+           evidence: str | None, repair_max: int = 2, validate_sql: bool = True,
+           execute_fn: Callable = evaluator.execute) -> Result:
     messages = [
         {"role": "system", "content": generate.SYSTEM},
         {"role": "user", "content": generate.build_prompt(schema_text, question, evidence)},
@@ -73,7 +74,7 @@ def answer(chat: Callable[[list[dict]], Completion], conn: psycopg.Connection,
             if v is not None and not v.ok:
                 att = Attempt(sql, "invalid", f"invalid_{v.error_type}", v.message)
             else:
-                ex = evaluator.execute(conn, sql)
+                ex = execute_fn(conn, sql)
                 res.exec_s += ex.ms / 1000
                 att = Attempt(sql, ex.status, ex.error_type, ex.error, ex)
         res.attempts.append(att)

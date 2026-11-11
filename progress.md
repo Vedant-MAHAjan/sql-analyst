@@ -31,3 +31,11 @@
 3. Structured output (SQL, assumptions, abstain) plus a repair loop that feeds PostgreSQL's error, position and hint back at most twice: execution-error rate **11.6% → 3.0%**, EX **49.8 → 51.8** (repair fixed 10, broke 0; p = 0.002).
 4. Repair makes 43 of 58 failing queries run but only 10 correct: unknown columns 13 run / 4 correct, grouping errors 9 / 2, SQLite functions 8 / 2; it cannot fix MySQL-style backticks, because sqlglot's parse message is less useful than PostgreSQL's.
 5. Net vs Phase 2 linking is +0.8 EX (not significant, p = 0.77): the structured-output prompt costs ~1 point on the first attempt and triples output tokens (p50 latency 4.8 → 7.9 s); vs the Phase 1 baseline it is +4.4 (p = 0.017).
+
+## Phase 4 — Answer layer and interfaces (done, 2026-11-11)
+
+1. Answer layer: a one-or-two-sentence summary from at most 50 result rows (delimited as data, not instructions) and a chart picked by result shape: one value → number, time + measure → line (year + month combined), category or id + measure → bar.
+2. Serving execution uses a server-side cursor capped at 1,000 rows at fetch time, so PostgreSQL stops early and the SQL is never rewritten with a `LIMIT`; model SQL still runs as `analyst_ro` behind the validator and repair loop.
+3. FastAPI (`/api/databases`, `/api/schema/{db}`, `/api/ask`) plus a no-build React + Vega-Lite page showing the answer, chart, rows, SQL, assumptions, repair history, tables given to the model and timings; works at phone width.
+4. MCP server (stdio) with `list_databases`, `describe_schema` and `ask`, tested end to end with the MCP Python client.
+5. Done-when met on Pagila: "How many rentals were made each month?" → SQL, 5 rows, line chart in ~14 s; "revenue per store" → bar chart; evaluation results unchanged (cached Phase 3 sample replays identically).

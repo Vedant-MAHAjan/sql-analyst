@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL Analyst</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66;
+    --border: #e3e3de; --accent: #2f5bd3; --accent-text: #ffffff;
+    --code-bg: #f1f1ed; --ok: #1f7a4d; --warn: #a3520c; --err: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151514; --panel: #1e1e1c; --text: #ecece8; --muted: #a0a09a;
+      --border: #33332f; --accent: #7c9bff; --accent-text: #101010;
+      --code-bg: #262623; --ok: #5fcf95; --warn: #f0a35c; --err: #ff7b72;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  form { display: grid; grid-template-columns: 200px 1fr auto; gap: 8px; }
+  select, textarea, button { font: inherit; color: var(--text); }
+  select, textarea { background: var(--panel); border: 1px solid var(--border);
+                     border-radius: 8px; padding: 8px 10px; }
+  textarea { resize: vertical; min-height: 42px; }
+  button { background: var(--accent); color: var(--accent-text); border: 0;
+           border-radius: 8px; padding: 0 18px; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .55; cursor: default; }
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-top: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+          padding: 16px; min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+             color: var(--muted); margin: 0 0 10px; }
+  .answer { font-size: 17px; margin: 0 0 12px; }
+  .big { font-size: 44px; font-weight: 700; line-height: 1.1; }
+  .big small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
+  pre { background: var(--code-bg); border-radius: 8px; padding: 12px; margin: 0;
+        overflow-x: auto; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-wrap; word-break: break-word; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  .pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px;
+          padding: 1px 8px; font-size: 12px; margin: 0 4px 4px 0; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--err); }
+  ul { margin: 6px 0 0; padding-left: 18px; }
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border);
+           white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .examples button { background: none; color: var(--accent); padding: 0; font-weight: 400;
+                     margin: 0 12px 0 0; font-size: 13px; }
+  #chart { width: 100%; }
+  @media (max-width: 760px) {
+    form { grid-template-columns: 1fr; }
+    textarea { min-height: 72px; }
+    button { padding: 10px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main id="root"></main>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega@5.30.0/build/vega.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.21.0/build/vega-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0/build/vega-embed.min.js"></script>
+<script>
+const { useState, useEffect, useRef } = React;
+const html = htm.bind(React.createElement);
+const EXAMPLES = {
+  pagila: ["What was the total payment revenue per store?",
+           "How many rentals were made each month?",
+           "Which 10 films were rented most often?"],
+};
+
+function Chart({ chart }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (chart.type === "line" || chart.type === "bar") {
+      const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+      vegaEmbed(ref.current, chart.vega_lite,
+        { actions: false, theme: dark ? "dark" : undefined,
+          config: { background: "transparent" } }).catch(console.error);
+    }
+  }, [chart]);
+  if (chart.type === "number")
+    return html`<div class="big">${fmt(chart.value)}<small>${chart.label}</small></div>`;
+  if (chart.type === "line" || chart.type === "bar") return html`<div id="chart" ref=${ref}></div>`;
+  return null;
+}
+
+function fmt(v, col = "") {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "number" && /(^|_)(id|year)$/i.test(col)) return String(v);
+  if (typeof v === "number") return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return String(v);
+}
+
+function Result({ r }) {
+  const statusClass = r.status === "ok" ? "ok" : r.status === "abstain" ? "warn" : "err";
+  const repairs = r.attempts.length - 1;
+  return html`
+    <div class="grid">
+      <section class="card">
+        <h2>Answer</h2>
+        <p class="answer">${r.answer}</p>
+        <${Chart} chart=${r.chart} />
+        ${r.columns.length > 0 && html`
+          <div class="table-wrap"><table>
+            <thead><tr>${r.columns.map(c => html`<th>${c}</th>`)}</tr></thead>
+            <tbody>${r.rows.slice(0, 50).map(row =>
+              html`<tr>${row.map((v, i) => html`<td>${fmt(v, r.columns[i])}</td>`)}</tr>`)}</tbody>
+          </table></div>
+          <div class="meta">${r.row_count.toLocaleString()} row${r.row_count === 1 ? "" : "s"}${
+            r.truncated ? " (capped)" : ""}${r.rows.length > 50 ? ", first 50 shown" : ""}</div>`}
+      </section>
+      <section class="card">
+        <h2>SQL</h2>
+        <pre>${r.sql || "(none)"}</pre>
+        <div class="meta">
+          <span class=${statusClass}>${r.status}</span>
+          ${repairs > 0 ? ` · repaired ${repairs}×` : ""}
+          · ${r.timings.total_s}s (model ${r.timings.llm_s}s, database ${r.timings.exec_s}s)
+        </div>
+        ${r.assumptions.length > 0 && html`
+          <div class="meta">Assumptions<ul>${r.assumptions.map(a => html`<li>${a}</li>`)}</ul></div>`}
+        <div class="meta">Tables given to the model:
+          ${r.linked_tables.map(t => html` <span class="pill">${t}</span>`)}</div>
+        ${repairs > 0 && html`
+          <details><summary>Repair history</summary>
+            ${r.attempts.map((a, i) => html`
+              <div class="meta">Attempt ${i + 1}: <span class=${a.status === "ok" ? "ok" : "err"}>${
+                a.status}</span> ${a.error}</div>
+              <pre>${a.sql}</pre>`)}
+          </details>`}
+      </section>
+    </div>`;
+}
+
+function App() {
+  const [dbs, setDbs] = useState([]);
+  const [db, setDb] = useState("pagila");
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState("");
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => { fetch("/api/databases").then(r => r.json()).then(setDbs)
+    .catch(() => setErr("Could not reach the API.")); }, []);
+  useEffect(() => {
+    if (!busy) return;
+    const t0 = Date.now(), id = setInterval(() => setElapsed((Date.now() - t0) / 1000), 200);
+    return () => clearInterval(id);
+  }, [busy]);
+
+  async function ask(e, question) {
+    e && e.preventDefault();
+    const text = (question ?? q).trim();
+    if (text.length < 3 || busy) return;
+    setQ(text); setBusy(true); setErr(""); setRes(null); setElapsed(0);
+    try {
+      const r = await fetch("/api/ask", { method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ database: db, question: text }) });
+      if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+      setRes(await r.json());
+    } catch (x) { setErr(String(x.message || x)); }
+    finally { setBusy(false); }
+  }
+
+  return html`
+    <h1>SQL Analyst</h1>
+    <p class="sub">Ask a question; the agent writes PostgreSQL, runs it read-only, and shows its work.</p>
+    <form onSubmit=${ask}>
+      <select value=${db} onChange=${e => setDb(e.target.value)} aria-label="Database">
+        ${dbs.map(d => html`<option value=${d}>${d}</option>`)}
+      </select>
+      <textarea rows="1" value=${q} placeholder="e.g. How many rentals were made each month?"
+        aria-label="Question" onChange=${e => setQ(e.target.value)}
+        onKeyDown=${e => { if (e.key === "Enter" && !e.shiftKey) ask(e); }}></textarea>
+      <button disabled=${busy || q.trim().length < 3}>${busy ? `${elapsed.toFixed(0)}s…` : "Ask"}</button>
+    </form>
+    ${EXAMPLES[db] && html`<div class="examples meta">Try: ${EXAMPLES[db].map(x => html`<button type="button" onClick=${() => ask(null, x)}>${x}</button>`)}</div>`}
+    ${err && html`<p class="err">${err}</p>`}
+    ${res && html`<${Result} r=${res} />`}`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+</body>
+</html>
