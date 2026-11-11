@@ -49,9 +49,10 @@ def _feedback(att: Attempt) -> str:
 def answer(chat: Callable[[list[dict]], Completion], conn: psycopg.Connection,
            allowed_tables: set[str], schema_text: str, question: str,
            evidence: str | None, repair_max: int = 2, validate_sql: bool = True,
-           execute_fn: Callable = evaluator.execute) -> Result:
+           execute_fn: Callable = evaluator.execute,
+           system: str = generate.SYSTEM) -> Result:
     messages = [
-        {"role": "system", "content": generate.SYSTEM},
+        {"role": "system", "content": system},
         {"role": "user", "content": generate.build_prompt(schema_text, question, evidence)},
     ]
     res = Result()

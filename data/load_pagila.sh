@@ -27,6 +27,10 @@ psql -d pagila -q -v ON_ERROR_STOP=1 < "$DIR/pagila-data.sql" >/dev/null
 psql -d pagila -qc "ANALYZE"
 # Model SQL runs as analyst_ro (docker/initdb/02_analyst_role.sql).
 psql -d pagila -qc "REVOKE CREATE ON SCHEMA public FROM PUBLIC"
+psql -d postgres -qc "REVOKE TEMPORARY ON DATABASE pagila FROM PUBLIC"
 psql -d pagila -qc "GRANT USAGE ON SCHEMA public TO analyst_ro"
 psql -d pagila -qc "GRANT SELECT ON ALL TABLES IN SCHEMA public TO analyst_ro"
+# Credentials stay out of reach of model SQL: column-level grant on staff.
+psql -d pagila -qc "REVOKE SELECT ON staff FROM analyst_ro"
+psql -d pagila -qc "GRANT SELECT (staff_id, first_name, last_name, address_id, email, store_id, active, username, last_update) ON staff TO analyst_ro"
 psql -d pagila -tAc "select count(*) || ' tables loaded' from information_schema.tables where table_schema='public' and table_type='BASE TABLE'"

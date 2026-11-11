@@ -4,8 +4,8 @@ A text-to-SQL analyst agent over PostgreSQL, evaluated against ground truth
 on BIRD Mini-Dev, with a held-out set on a public non-BIRD database. Models
 run locally through Ollama.
 
-Status: **Phases 0–4 done** (see [progress.md](progress.md)). Phase 5
-(guardrails and attack suite) next.
+Status: **Phases 0–5 done** (see [progress.md](progress.md)). Phase 6
+(experiments and write-up) next.
 
 ## Setup
 
@@ -85,6 +85,25 @@ and the SQL with the model's assumptions and any repair attempts. The MCP
 server exposes `list_databases`, `describe_schema` and `ask`. Results are
 capped at 1,000 rows at fetch time (no `LIMIT` is injected), and at most 50
 rows ever go back to the model.
+
+## Guardrails (Phase 5)
+
+Safety comes from the database and the validator; the prompt is defense in
+depth. 57 attacks run against clone databases with planted prompt injections,
+scored by database state, not by reading replies.
+
+| Layers on | Writes | Exfiltration | Resource | Injection |
+|---|---|---|---|---|
+| All | 0% | 0% | 0% | 0% |
+| No prompt guard | 0% | 0% | 0% | 0% |
+| Database role only | 0% | 13.3% | 0% | 17.6% |
+
+```bash
+./data/setup_attack_dbs.sh                         # clones + planted injections
+.venv/bin/python -m eval.attack_suite full         # or no_prompt, role_only
+```
+
+Details, per-layer attribution and costs: [reports/phase5](reports/phase5).
 
 ## Held-out set
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import psycopg
 
-from agent.schema import ROOT, _quote_fn, tables_for
+from agent.schema import EXEC_ROLE, READABLE, ROOT, _quote_fn, tables_for
 
 DESC_ROOT = ROOT / "data/raw/minidev/minidev/MINIDEV/dev_databases"
 
@@ -131,7 +131,8 @@ def _build(conn: psycopg.Connection, db_id: str) -> SchemaIndex:
         "CASE WHEN data_type = 'USER-DEFINED' THEN udt_name "
         "WHEN data_type = 'ARRAY' THEN substr(udt_name, 2) || '[]' ELSE data_type END "
         "FROM information_schema.columns WHERE table_schema = 'public' "
-        "AND table_name = ANY(%s) ORDER BY table_name, ordinal_position", (names,)
+        "AND table_name = ANY(%s) AND " + READABLE +
+        " ORDER BY table_name, ordinal_position", (names, EXEC_ROLE)
     ):
         tables[t].columns[c] = Column(c, typ)
     fks = []

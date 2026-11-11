@@ -6,3 +6,6 @@ model:
   provider: ollama
   model: qwen2.5-coder:14b
   options: {temperature: 0.0, seed: 0, num_ctx: 8192}
+prompt_guard: true
+validate: true
+grounding: true

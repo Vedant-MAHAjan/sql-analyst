@@ -6,14 +6,14 @@ import psycopg
 DSN = os.environ.get(
     "BIRD_DSN", "postgresql://postgres:postgres@127.0.0.1:5433/bird"
 )
-DSNS = {
-    "bird": DSN,
-    "pagila": os.environ.get("PAGILA_DSN", DSN.rsplit("/", 1)[0] + "/pagila"),
-}
+_ADMIN = DSN.rsplit("/", 1)[0]
+_DBS = ("bird", "pagila", "bird_attack", "pagila_attack")
+DSNS = {db: f"{_ADMIN}/{db}" for db in _DBS}
+DSNS["bird"] = DSN
 # Model-written SQL runs as the read-only analyst role.
 _ANALYST = os.environ.get(
     "ANALYST_DSN_BASE", "postgresql://analyst_ro:analyst_ro@127.0.0.1:5433")
-ANALYST_DSNS = {"bird": f"{_ANALYST}/bird", "pagila": f"{_ANALYST}/pagila"}
+ANALYST_DSNS = {db: f"{_ANALYST}/{db}" for db in _DBS}
 
 
 def connect(

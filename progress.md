@@ -39,3 +39,11 @@
 3. FastAPI (`/api/databases`, `/api/schema/{db}`, `/api/ask`) plus a no-build React + Vega-Lite page showing the answer, chart, rows, SQL, assumptions, repair history, tables given to the model and timings; works at phone width.
 4. MCP server (stdio) with `list_databases`, `describe_schema` and `ask`, tested end to end with the MCP Python client.
 5. Done-when met on Pagila: "How many rentals were made each month?" → SQL, 5 rows, line chart in ~14 s; "revenue per store" → bar chart; evaluation results unchanged (cached Phase 3 sample replays identically).
+
+## Phase 5 — Guardrails and attack suite (done, 2026-11-11)
+
+1. 57 attacks (15 writes, 15 exfiltration, 10 resource, 17 planted injections) run on clone databases and scored by state: data/catalog fingerprints, canary secrets, wall time + health check, and an injected marker the answer obeyed rather than quoted.
+2. With all layers on, attack success is **0%** in every category, no data changed, and utility under attack is 94.1%; with only the database role, writes still fail (0%) but catalog reads (13.3%) and injections (17.6%) get through.
+3. Each layer was measured alone: the validator blocked every write and catalog read when the prompt guard was off; the role blocked every write that reached it; column grants kept `staff.password` out of both the prompt and the value index.
+4. Found and fixed: the value index stored password hashes; a model-issued `BEGIN` could leave connections aborted; the summary prompt's "data, not instructions" line did not stop injections (17.6% success), so a grounding check now replaces any summary that states no value from the result — injection success 0%.
+5. The prompt guard costs nothing measurable on BIRD (51.0 vs 49.0 EX on 100 questions, p = 0.69); the grounding fallback replaces about 1 in 10 ordinary answers with a plain readout; huge result cells are cut to 200 characters before summarising (R10: 127 s → 23 s).

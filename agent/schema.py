@@ -9,6 +9,10 @@ import psycopg
 ROOT = Path(__file__).resolve().parent.parent
 DEV_TABLES = ROOT / "data/raw/minidev/minidev/MINIDEV/dev_tables.json"
 PLAIN = re.compile(r"^[a-z_][a-z0-9_]*$")
+# Model SQL runs as this role; the prompt only shows columns it can read.
+EXEC_ROLE = "analyst_ro"
+READABLE = ("has_column_privilege(%s, format('%%I.%%I', table_schema, table_name), "
+            "column_name, 'SELECT')")
 
 
 @lru_cache
@@ -50,7 +54,8 @@ def ddl(conn: psycopg.Connection, db_id: str) -> str:
         "CASE WHEN data_type = 'USER-DEFINED' THEN udt_name "
         "WHEN data_type = 'ARRAY' THEN substr(udt_name, 2) || '[]' ELSE data_type END "
         "FROM information_schema.columns WHERE table_schema = 'public' "
-        "AND table_name = ANY(%s) ORDER BY table_name, ordinal_position", (tables,)
+        "AND table_name = ANY(%s) AND " + READABLE +
+        " ORDER BY table_name, ordinal_position", (tables, EXEC_ROLE)
     ).fetchall()
     keys = conn.execute(
         "SELECT rel.relname, con.contype, "

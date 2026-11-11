@@ -10,7 +10,7 @@ import sys
 import psycopg
 from psycopg import sql
 
-from agent.schema import bird_tables, tables_for
+from agent.schema import EXEC_ROLE, READABLE, bird_tables, tables_for
 
 MAX_VALUE_LEN = 80
 MAX_VALUES_PER_COLUMN = 5000
@@ -32,7 +32,8 @@ def build(conn: psycopg.Connection, db_ids: list[str]) -> None:
         cols = conn.execute(
             "SELECT table_name, column_name FROM information_schema.columns "
             "WHERE table_schema = 'public' AND table_name = ANY(%s) "
-            "AND data_type = ANY(%s)", (tables, list(TEXT_TYPES))).fetchall()
+            "AND data_type = ANY(%s) AND " + READABLE,  # never index unreadable columns
+            (tables, list(TEXT_TYPES), EXEC_ROLE)).fetchall()
         for table, col in cols:
             t, c = sql.Identifier(table), sql.Identifier(col)
             conn.execute(sql.SQL(
@@ -89,9 +90,10 @@ def lookup(conn: psycopg.Connection, db_id: str, text: str, threshold: float = 0
     return out[:limit]
 
 
-if __name__ == "__main__" and sys.argv[1:] == ["build"]:
+if __name__ == "__main__" and sys.argv[1:2] in (["build"], ["build-attack"]):
     from eval.db import DSNS, connect
-    with connect(DSNS["bird"], timeout_ms=0) as conn:
+    suffix = "_attack" if sys.argv[1] == "build-attack" else ""
+    with connect(DSNS[f"bird{suffix}"], timeout_ms=0) as conn:
         build(conn, list(bird_tables()))
-    with connect(DSNS["pagila"], timeout_ms=0) as conn:
+    with connect(DSNS[f"pagila{suffix}"], timeout_ms=0) as conn:
         build(conn, ["pagila"])

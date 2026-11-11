@@ -116,7 +116,7 @@ def summarize(rows: list[dict]) -> dict:
 def prompt_version(cfg: dict) -> str:
     link_cfg = cfg.get("linking")
     if cfg.get("agent"):
-        base = generate.PROMPT_VERSION
+        base = generate.PROMPT_VERSION + ("-guard" if cfg["agent"].get("prompt_guard") else "")
     elif not link_cfg:
         return baseline.PROMPT_VERSION
     else:
@@ -165,7 +165,8 @@ def _agent_question(client, cfg, conn, exec_conn, schema, it, evidence) -> dict:
         lambda msgs: cached_chat(client, cfg["model"], msgs), exec_conn,
         set(tables_for(conn, it["db_id"])), schema, it["question"], evidence,
         repair_max=agent_cfg.get("repair_max", 2),
-        validate_sql=agent_cfg.get("validate", True))
+        validate_sql=agent_cfg.get("validate", True),
+        system=generate.SYSTEM_GUARDED if agent_cfg.get("prompt_guard") else generate.SYSTEM)
 
     def as_exec(att: pipeline.Attempt) -> evaluator.Exec:
         return att.exec or evaluator.Exec("error", error_type=att.error_type or att.status,
