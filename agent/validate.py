@@ -38,7 +38,7 @@ def _fail(kind: str, msg: str) -> Validation:
 def validate(sql: str, allowed_tables: set[str]) -> Validation:
     try:
         statements = [s for s in sqlglot.parse(sql, read="postgres") if s is not None]
-    except sqlglot.errors.ParseError as exc:
+    except sqlglot.errors.SqlglotError as exc:  # incl. TokenError
         first = str(exc).splitlines()[0]
         return _fail("parse_error", f"could not parse as PostgreSQL: {first}")
     if len(statements) != 1:

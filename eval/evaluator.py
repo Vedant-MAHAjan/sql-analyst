@@ -39,6 +39,7 @@ def execute(conn: psycopg.Connection, sql: str) -> Exec:
         with conn.cursor() as cur:
             cur.execute(sql)
             rows: list = []
+            columns = [d.name for d in cur.description or []]
             if cur.description:
                 while batch := cur.fetchmany(10_000):
                     rows.extend(batch)
@@ -54,7 +55,7 @@ def execute(conn: psycopg.Connection, sql: str) -> Exec:
                     error=msg[0] if msg else "", ms=_ms(start),
                     hint=getattr(diag, "message_hint", None) or "",
                     position=int(getattr(diag, "statement_position", None) or 0))
-    return Exec("ok", rows, ms=_ms(start))
+    return Exec("ok", rows, ms=_ms(start), columns=columns)
 
 
 def _ms(start: float) -> int:

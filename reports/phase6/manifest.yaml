@@ -1,0 +1,15 @@
+# Headline table: each row re-runs a config (from the model-call cache) and is
+# compared, paired, against the row named in "vs". Build: make reproduce
+runs:
+  - {id: base_h, label: "Baseline: whole schema, one call", short: Baseline, hints: true, config: eval/configs/baseline.yaml}
+  - {id: link_h, label: "Schema linking", short: Linked, hints: true, config: eval/configs/linked_evidence.yaml, vs: base_h}
+  - {id: agent_h, label: "Agent: linking + validate + repair", short: Agent, hints: true, config: eval/configs/agent_evidence.yaml, vs: base_h}
+  - {id: agent7_h, label: "Agent on 7B model", short: "Agent 7B", hints: true, config: eval/configs/agent_7b_evidence.yaml, vs: agent_h}
+  - {id: pc_h, label: "Agent + planner + critic (200-question sample)", short: "Planner+critic", hints: true, config: eval/configs/agent_planner_critic_evidence.yaml, sample: 200, vs: agent_h}
+  - {id: base_n, label: "Baseline: whole schema, one call", short: Baseline, hints: false, config: eval/configs/baseline_noevidence.yaml}
+  - {id: link_n, label: "Schema linking", short: Linked, hints: false, config: eval/configs/linked_noevidence.yaml, vs: base_n}
+  - {id: agent_n, label: "Agent: linking + validate + repair", short: Agent, hints: false, config: eval/configs/agent_noevidence.yaml, vs: base_n}
+  - {id: tier_n, label: "Agent + 7B table picker (tiered)", short: Tiered, hints: false, config: eval/configs/agent_tiered_noevidence.yaml, vs: agent_n}
+  - {id: ho_base, label: "Held-out: baseline", short: "HO baseline", hints: true, dataset: heldout, config: eval/configs/heldout_baseline.yaml}
+  - {id: ho_agent, label: "Held-out: agent", short: "HO agent", hints: true, dataset: heldout, config: eval/configs/heldout_agent.yaml, vs: ho_base}
+passk: {config: eval/configs/agent_evidence.yaml, sample: 100, temperature: 0.7, seeds: [1, 2, 3, 4]}

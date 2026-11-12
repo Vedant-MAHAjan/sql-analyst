@@ -1,0 +1,51 @@
+n,row,question_id,db_id,difficulty,label,note
+1,1,1472,debit_card_specializing,moderate,aggregation_grain,took one month's row instead of summing per customer
+2,11,1490,debit_card_specializing,moderate,gold_ambiguous,counts customers; gold counts monthly rows while the hint says customers
+3,12,1493,debit_card_specializing,simple,exec_error,grouping error survived both repairs
+4,13,1498,debit_card_specializing,simple,wrong_column,took MAX of the date column instead of consumption
+5,24,1525,debit_card_specializing,simple,gold_ambiguous,distinct customers; gold counts transactions for 'percentage of customers'
+6,32,1322,student_club,moderate,gold_error,gold returns event names (EXCEPT) for a 'how many' question
+7,35,1334,student_club,simple,spurious_filter,invented position = 'Student_Club'
+8,56,1387,student_club,moderate,wrong_join,used attendance; budget managers come via budget -> expense
+9,60,1394,student_club,simple,spurious_filter,invented position = 'Student_Club'
+10,87,1166,thrombosis_prediction,simple,hint_misuse,ignored 'symptoms is not NULL'
+11,90,1171,thrombosis_prediction,challenging,hint_misuse,"age taken from birth year alone, not at examination"
+12,92,1179,thrombosis_prediction,moderate,gold_ambiguous,"hint names aCL IgM; gold returns IgA, IgG and IgM"
+13,93,1185,thrombosis_prediction,challenging,exec_error,MySQL backtick identifiers; repair could not fix
+14,105,1227,thrombosis_prediction,moderate,date_handling,AGE() in whole years vs gold's year subtraction
+15,118,1254,thrombosis_prediction,moderate,gold_error,hint says >= 1990; gold uses > '1990'
+16,119,1255,thrombosis_prediction,moderate,wrong_column,used examination.aCL IgM instead of laboratory.IGM
+17,122,1265,thrombosis_prediction,moderate,value_mismatch,used '-'/'+-' where the data stores 'negative'/'0'
+18,138,1040,european_football_2,moderate,output_shape,added the average column
+19,145,1076,european_football_2,challenging,numeric_precision,0.8000 vs 0.79999; correct under tolerant EX
+20,153,1094,european_football_2,challenging,exec_error,scalar subquery returned several rows
+21,162,1114,european_football_2,challenging,numeric_precision,numeric vs float4; correct under tolerant EX
+22,175,1145,european_football_2,simple,output_shape,added the game count column
+23,177,1147,european_football_2,simple,null_ordering,ORDER BY DESC puts NULLs first in PostgreSQL
+24,185,861,formula_1,simple,value_mismatch,q3 matched '0:01:54'; data stores '1:54.x'
+25,201,896,formula_1,challenging,aggregation_grain,double join inflated the numerator (2246%)
+26,224,955,formula_1,challenging,wrong_column,rank (fastest lap) instead of finishing position
+27,237,989,formula_1,moderate,output_shape,added driverid
+28,242,1002,formula_1,moderate,output_shape,one row per race instead of the first race
+29,264,751,superhero,moderate,gold_error,'at least five' with LIMIT and no ORDER BY: any five are valid
+30,275,775,superhero,challenging,hint_misuse,eye colour instead of the hinted skin colour
+31,299,533,codebase_community,simple,date_handling,timestamp > date includes Sept 1; gold compares DATE()
+32,317,584,codebase_community,moderate,gold_ambiguous,gold reads edit comments from postHistory; question says comments
+33,329,640,codebase_community,moderate,gold_ambiguous,posts by owner; gold counts posts the user edited
+34,335,682,codebase_community,moderate,gold_error,"gold filters on user creation year and returns owner id, not post id"
+35,345,716,codebase_community,moderate,wrong_column,guessed votes.votetypeid; users.upvotes exists
+36,346,340,card_games,simple,output_shape,card names vs gold's ids for 'which cards'
+37,352,349,card_games,moderate,gold_error,gold restricts to promo cards and a different artist rule
+38,369,412,card_games,moderate,wrong_join,joined on multiverseid instead of uuid
+39,371,415,card_games,challenging,exec_error,undefined column after repair
+40,388,480,card_games,moderate,wrong_join,filtered foreign_data.name (translated) instead of joining cards
+41,390,484,card_games,moderate,gold_error,asks for Italian names; gold returns English cards.name
+42,408,215,toxicology,challenging,output_shape,one combined count vs gold's two columns
+43,418,234,toxicology,moderate,gold_error,operator precedence in gold (AND/OR) gives 1041
+44,435,281,toxicology,challenging,aggregation_grain,no DISTINCT on elements
+45,442,23,california_schools,moderate,output_shape,"split address into street, city, zip"
+46,450,37,california_schools,moderate,null_ordering,division-by-zero/NULL ordering differs from gold
+47,452,39,california_schools,simple,wrong_column,filtered city = 'Fresno' instead of county
+48,467,87,california_schools,challenging,output_shape,added a third email column and an extra district
+49,477,115,financial,challenging,exec_error,undefined table alias after repair
+50,480,118,financial,moderate,numeric_precision,numeric vs float4; correct under tolerant EX

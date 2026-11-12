@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from agent import baseline, generate, linker, pipeline, schema_index
+from agent import baseline, generate, linker, llm_linker, multi, pipeline, schema_index
 from agent.llm import Completion, make_client
 from agent.schema import ddl, tables_for
 from eval import evaluator
@@ -117,6 +117,10 @@ def prompt_version(cfg: dict) -> str:
     link_cfg = cfg.get("linking")
     if cfg.get("agent"):
         base = generate.PROMPT_VERSION + ("-guard" if cfg["agent"].get("prompt_guard") else "")
+        if cfg["agent"].get("mode") == "planner_critic":
+            base += "-" + multi.PROMPT_VERSION
+        if link_cfg and link_cfg.get("llm_linker"):
+            base += "-" + llm_linker.PROMPT_VERSION
     elif not link_cfg:
         return baseline.PROMPT_VERSION
     else:
@@ -124,25 +128,37 @@ def prompt_version(cfg: dict) -> str:
     return base + ("-desc" if link_cfg and link_cfg.get("describe") else "")
 
 
-def build_schema(conn, cfg: dict, it: dict, evidence: str | None, whole: dict) -> str:
+def llm_tables(conn, link_cfg: dict, llm_client, it: dict, evidence: str | None) -> list[str]:
+    ix = schema_index.build(conn, it["db_id"])
+    comp = cached_chat(llm_client, link_cfg["llm_linker"],
+                       llm_linker.messages(ix, it["question"], evidence),
+                       llm_linker.OUTPUT_SCHEMA)
+    return llm_linker.parse(comp.text, set(ix.tables))
+
+
+def build_schema(conn, cfg: dict, it: dict, evidence: str | None, whole: dict,
+                 llm_client=None) -> str:
     link_cfg = cfg.get("linking")
     if not link_cfg:
         if it["db_id"] not in whole:
             whole[it["db_id"]] = ddl(conn, it["db_id"])
         return whole[it["db_id"]]
-    opts = {k: v for k, v in link_cfg.items() if k != "describe"}
+    opts = {k: v for k, v in link_cfg.items() if k not in ("describe", "llm_linker")}
+    extra = llm_tables(conn, link_cfg, llm_client, it, evidence) if llm_client else None
     lk = linker.link(conn, it["db_id"], it["question"], evidence or "",
-                     linker.LinkerConfig(**opts))
+                     linker.LinkerConfig(**opts), extra_tables=extra)
     return schema_index.build(conn, it["db_id"]).render(
         lk.selection, lk.value_hits, describe=link_cfg.get("describe", False))
 
 
-def cached_chat(client, model_cfg: dict, messages: list[dict]) -> Completion:
-    key = _hash([model_cfg, messages, generate.OUTPUT_SCHEMA])
+def cached_chat(client, model_cfg: dict, messages: list[dict],
+                schema: dict | None = None) -> Completion:
+    schema = schema or generate.OUTPUT_SCHEMA
+    key = _hash([model_cfg, messages, schema])
     path = RUNS / "cache" / f"{key}.json"
     if path.exists():
         return Completion(**json.loads(path.read_text()))
-    comp = client.chat(messages, generate.OUTPUT_SCHEMA)
+    comp = client.chat(messages, schema)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(comp.__dict__))
     return comp
@@ -161,12 +177,19 @@ def _baseline_question(client, cfg, conn, schema, it, evidence) -> dict:
 
 def _agent_question(client, cfg, conn, exec_conn, schema, it, evidence) -> dict:
     agent_cfg = cfg["agent"]
-    res = pipeline.answer(
-        lambda msgs: cached_chat(client, cfg["model"], msgs), exec_conn,
-        set(tables_for(conn, it["db_id"])), schema, it["question"], evidence,
-        repair_max=agent_cfg.get("repair_max", 2),
-        validate_sql=agent_cfg.get("validate", True),
-        system=generate.SYSTEM_GUARDED if agent_cfg.get("prompt_guard") else generate.SYSTEM)
+    kwargs = dict(repair_max=agent_cfg.get("repair_max", 2),
+                  validate_sql=agent_cfg.get("validate", True),
+                  system=generate.SYSTEM_GUARDED if agent_cfg.get("prompt_guard")
+                  else generate.SYSTEM)
+    allowed = set(tables_for(conn, it["db_id"]))
+    review = None
+    if agent_cfg.get("mode") == "planner_critic":
+        res, review = multi.answer(
+            lambda msgs, sch=None: cached_chat(client, cfg["model"], msgs, sch), exec_conn,
+            allowed, schema, it["question"], evidence, **kwargs)
+    else:
+        res = pipeline.answer(lambda msgs: cached_chat(client, cfg["model"], msgs), exec_conn,
+                              allowed, schema, it["question"], evidence, **kwargs)
 
     def as_exec(att: pipeline.Attempt) -> evaluator.Exec:
         return att.exec or evaluator.Exec("error", error_type=att.error_type or att.status,
@@ -178,7 +201,8 @@ def _agent_question(client, cfg, conn, exec_conn, schema, it, evidence) -> dict:
             "retries": len(res.attempts) - 1, "abstain": final.status == "abstain",
             "assumptions": res.assumptions,
             "attempts": [{"sql": a.sql, "status": a.status, "error_type": a.error_type,
-                          "error": a.error} for a in res.attempts]}
+                          "error": a.error} for a in res.attempts],
+            **({"review": review.__dict__} if review else {})}
 
 
 def run(cfg: dict, sample: int | None, seed: int) -> Path:
@@ -194,13 +218,15 @@ def run(cfg: dict, sample: int | None, seed: int) -> Path:
         {**cfg, "sample": sample, "seed": seed, "config_hash": config_hash,
          "prompt_version": version}))
     client = make_client(cfg["model"])
+    link_cfg = cfg.get("linking") or {}
+    llm_client = make_client(link_cfg["llm_linker"]) if link_cfg.get("llm_linker") else None
     rows, schemas = [], {}
     with connect(DSNS[db], read_only=True) as conn, \
             connect(ANALYST_DSNS[db]) as exec_conn, \
             open(out_dir / "log.jsonl", "w") as log:
         for i, it in enumerate(items):
             evidence = it.get("evidence") if cfg.get("evidence") else None
-            schema = build_schema(conn, cfg, it, evidence, schemas)
+            schema = build_schema(conn, cfg, it, evidence, schemas, llm_client)
             if cfg.get("agent"):
                 q = _agent_question(client, cfg, conn, exec_conn, schema, it, evidence)
             else:
@@ -221,7 +247,7 @@ def run(cfg: dict, sample: int | None, seed: int) -> Path:
                 "schema_chars": len(schema),
                 "correct_first": first["ex"], "error_type_first": q["first"].error_type,
             }
-            for k in ("abstain", "assumptions", "attempts"):
+            for k in ("abstain", "assumptions", "attempts", "review"):
                 if k in q:
                     row[k] = q[k]
             log.write(json.dumps(row, default=str) + "\n")
@@ -245,5 +271,16 @@ if __name__ == "__main__":
     ap.add_argument("config")
     ap.add_argument("--sample", type=int)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--set", action="append", default=[],
+                    help="override a config value, e.g. model.options.seed=1")
     args = ap.parse_args()
-    print(run(yaml.safe_load(open(args.config)), args.sample, args.seed))
+    cfg = yaml.safe_load(open(args.config))
+    for kv in args.set:
+        key, value = kv.split("=", 1)
+        *path, last = key.split(".")
+        node = cfg
+        for k in path:
+            node = node.setdefault(k, {})
+        node[last] = yaml.safe_load(value)
+        cfg["name"] += f"-{last}{value}"
+    print(run(cfg, args.sample, args.seed))

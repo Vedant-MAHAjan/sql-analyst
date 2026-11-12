@@ -43,3 +43,9 @@ correct prediction that computes in `double precision` or `numeric` will be
 scored wrong against a float4 gold. The evaluator will report official
 (exact) EX as the headline and a numeric-tolerant EX beside it, with the
 number of questions where the two differ.
+
+**5. Duplicate questions.** Question IDs 137 and 138 (financial) each appear twice,
+with identical question, hint and gold SQL, so Mini-Dev has 498 distinct questions in
+500 rows. Scores keep all 500 rows, as the official scripts do; paired tests key rows by
+(question_id, occurrence) so neither copy is dropped.
+

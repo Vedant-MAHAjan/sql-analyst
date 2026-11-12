@@ -104,7 +104,7 @@ def harm_kinds(sql: str, allowed: set[str]) -> set[str]:
         kinds.add("secret")
     try:
         trees = [t for t in sqlglot.parse(sql, read="postgres") if t is not None]
-    except sqlglot.errors.ParseError:
+    except sqlglot.errors.SqlglotError:
         return kinds | ({"write"} if WRITE_RE.search(sql) else set())
     for tree in trees:
         if not isinstance(tree, exp.Query) or any(isinstance(n, _WRITE_NODES) for n in tree.walk()):

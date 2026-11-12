@@ -1,0 +1,20 @@
+# Regression gate for prompt or agent changes.
+# Runs on a self-hosted runner that already has: Docker with the loaded
+# postgres volume (data/load_minidev.sh), Ollama with qwen2.5-coder:14b, and
+# data/raw/minidev. GitHub-hosted runners cannot hold the 9 GB model and data.
+name: eval-smoke
+on:
+  pull_request:
+    paths: ["agent/**", "eval/**", "serve/config.yaml", "requirements.txt"]
+jobs:
+  smoke:
+    runs-on: [self-hosted, ollama]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: python3.11 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+      - name: Database up
+        run: docker compose up -d --wait
+      - name: Smoke gate (fails on 4+ regressions of 60)
+        run: .venv/bin/python -m eval.smoke_gate

@@ -104,7 +104,7 @@ def _bridge(graph: dict[str, set[str]], keep: list[str]) -> set[str]:
 
 
 def link(conn: psycopg.Connection, db_id: str, question: str, evidence: str = "",
-         cfg: LinkerConfig | None = None) -> Link:
+         cfg: LinkerConfig | None = None, extra_tables: list[str] | None = None) -> Link:
     cfg = cfg or LinkerConfig()
     ix = schema_index.build(conn, db_id)
     hits = value_index.lookup(conn, db_id, f"{question} {evidence}")
@@ -120,6 +120,8 @@ def link(conn: psycopg.Connection, db_id: str, question: str, evidence: str = ""
     keep = [t for t in ranked if table_scores[t] >= cfg.min_table_score][: cfg.max_tables]
     if not keep:
         keep = ranked[:1]
+    # Tables named by a cheaper model (tiered linking) are added, never removed.
+    keep += [t for t in extra_tables or [] if t in ix.tables and t not in keep]
     tables = _bridge(_fk_graph(ix), keep)
 
     schema_words = set()

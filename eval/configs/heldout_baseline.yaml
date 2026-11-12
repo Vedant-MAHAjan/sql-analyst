@@ -1,0 +1,8 @@
+# Held-out (Pagila): Phase 1 baseline, whole schema.
+name: heldout-baseline
+dataset: heldout
+evidence: true
+model:
+  provider: ollama
+  model: qwen2.5-coder:14b
+  options: {temperature: 0.0, seed: 0, num_ctx: 8192}

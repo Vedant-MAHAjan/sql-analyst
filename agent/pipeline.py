@@ -50,10 +50,13 @@ def answer(chat: Callable[[list[dict]], Completion], conn: psycopg.Connection,
            allowed_tables: set[str], schema_text: str, question: str,
            evidence: str | None, repair_max: int = 2, validate_sql: bool = True,
            execute_fn: Callable = evaluator.execute,
-           system: str = generate.SYSTEM) -> Result:
+           system: str = generate.SYSTEM, plan: str | None = None) -> Result:
+    user = generate.build_prompt(schema_text, question, evidence)
+    if plan:
+        user += f"\n\nPlan:\n{plan}"
     messages = [
         {"role": "system", "content": system},
-        {"role": "user", "content": generate.build_prompt(schema_text, question, evidence)},
+        {"role": "user", "content": user},
     ]
     res = Result()
     for i in range(repair_max + 1):

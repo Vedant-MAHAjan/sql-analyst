@@ -20,7 +20,7 @@
 
 1. Schema index (catalog + inferred joins for databases with no declared foreign keys + BIRD column descriptions) and a `pg_trgm` value index of 406,578 distinct values in a hidden `retrieval` schema; lookups take 10–40 ms.
 2. Linker scores columns by name/description overlap, hint mentions and value hits, keeps up to 5 tables, and adds bridge tables on join paths; a fix for Python hash-seed order made it deterministic.
-3. Schema recall (sqlglot-resolved gold columns all present): **96.4%** with hints at 72% of the whole-schema prompt size (target ≥95%); 76.6% without hints; column-level pruning fell to 83–87%, so linking stays table-level.
+3. Schema recall (sqlglot-resolved gold columns all present): **96.4%** with hints at 72% of the whole-schema prompt size (target ≥95%); 84.0% without hints (an earlier draft said 76.6%, from a stricter sweep setting); column-level pruning fell to 83–87%, so linking stays table-level.
 4. EX with hints rose 47.4 → **51.0** (McNemar p = 0.013); without hints 24.2 → **31.2** (p < 0.001), driven by matched values such as 'Bahrain Grand Prix' → `races.name`.
 5. BIRD column descriptions did not help (50.8, p = 0.06 vs baseline) and doubled the prompt, so they are off by default; remaining errors are mostly SQLite functions and text-vs-number comparisons, which Phase 3 targets.
 
@@ -47,3 +47,11 @@
 3. Each layer was measured alone: the validator blocked every write and catalog read when the prompt guard was off; the role blocked every write that reached it; column grants kept `staff.password` out of both the prompt and the value index.
 4. Found and fixed: the value index stored password hashes; a model-issued `BEGIN` could leave connections aborted; the summary prompt's "data, not instructions" line did not stop injections (17.6% success), so a grounding check now replaces any summary that states no value from the result — injection success 0%.
 5. The prompt guard costs nothing measurable on BIRD (51.0 vs 49.0 EX on 100 questions, p = 0.69); the grounding fallback replaces about 1 in 10 ordinary answers with a plain readout; huge result cells are cut to 200 characters before summarising (R10: 127 s → 23 s).
+
+## Phase 6 — Experiments and write-up (done, 2026-11-11)
+
+1. Ablations, all paired against their reference: the 7B model loses 6.8 EX (p = 0.001) for 2.3× speed; planner + critic loses 6.0 (p = 0.05, 200-question sample) at 4× the time; a 7B table picker added to linking raises no-hint recall 84.0% → 95.8% and EX +2.6 (p = 0.004).
+2. Reliability: on 100 questions at temperature 0.7, pass@1 51%, **pass^4 34%**, pass@4 66% — a third of questions flip between runs. Held-out (prompts frozen by hash first): agent 95.0% vs baseline 90.0% on 40 Pagila questions, higher than BIRD, so not a memorization signal either way.
+3. Failure taxonomy of 50 failures: 14% gold errors + 10% ambiguous golds + 6% numeric precision are not model errors; output shape (16%) and schema misreads (20%) are the real ones. Also found two duplicate questions in Mini-Dev and a validator crash on sqlglot `TokenError` (fixed).
+4. Run reports (HTML, tradeoff chart, run diffs), a 60-question CI smoke gate with a self-hosted-runner workflow, and `make reproduce`, which rebuilds the results table exactly from a committed 1.5 MB model-call cache without a GPU.
+5. Final README with results, findings, safety table, reproduction and limitations; resume entry filled from logged numbers in reports/resume.md.
