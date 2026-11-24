@@ -10,7 +10,7 @@ from doing damage?*
 
 | What I tested | What I found |
 |---|---|
-| Is it accurate? | **51.8%** on a hard public benchmark, up from 47.4% for the plain version |
+| Is it accurate? | **51.8%** on a hard public benchmark (GPT-4 scored 35.8% on the same test), up from 47.4% for the plain version |
 | Is it consistent? | Same questions, four runs: right **51%** of the time on average, right every time on only **34%** |
 | Does adding a second AI "reviewer" help? | No. It scored **6 points lower** and took 4× as long in my test |
 | Can text inside the data hijack it? | Yes, at first: a film description made it reply with an attacker's word. A code check took this from **17.6% to 0%** of my planted attacks |
