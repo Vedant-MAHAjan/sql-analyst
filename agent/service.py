@@ -1,4 +1,5 @@
 """The agent behind the API and the MCP server: question in, SQL + answer + chart out."""
+import re
 import time
 from pathlib import Path
 
@@ -13,6 +14,9 @@ from eval.db import ANALYST_DSNS, DSNS, connect
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "serve/config.yaml"
 DISPLAY_ROWS = 200
+WRITE_REFUSAL = "I can't do that: I can only read data, not change it."
+WRITE_WORDS = re.compile(r"\b(delete|drop|remove|update|insert|add|create|change|set|"
+                         r"rename|truncate|alter|grant|lock|modify)\b", re.I)
 
 
 class Agent:
@@ -78,7 +82,8 @@ class Agent:
         }
         llm_s = res.llm_s
         if final.status == "abstain":
-            out["answer"] = "I can't answer that from this database's schema."
+            out["answer"] = (WRITE_REFUSAL if WRITE_WORDS.search(question)
+                             else "I can't answer that from this database.")
         elif final.status == "ok":
             ex = final.exec
             out.update(columns=ex.columns, row_count=len(ex.rows), truncated=ex.truncated,

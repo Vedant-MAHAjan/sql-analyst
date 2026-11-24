@@ -154,8 +154,10 @@ function App() {
   const [err, setErr] = useState("");
   const [elapsed, setElapsed] = useState(0);
 
+  const [mode, setMode] = useState(null);
   useEffect(() => { fetch("/api/databases").then(r => r.json()).then(setDbs)
-    .catch(() => setErr("Could not reach the API.")); }, []);
+    .catch(() => setErr("Could not reach the API."));
+    fetch("/api/mode").then(r => r.json()).then(setMode).catch(() => {}); }, []);
   useEffect(() => {
     if (!busy) return;
     const t0 = Date.now(), id = setInterval(() => setElapsed((Date.now() - t0) / 1000), 200);
@@ -180,6 +182,8 @@ function App() {
   return html`
     <h1>SQL Analyst</h1>
     <p class="sub">Ask a question; the agent writes PostgreSQL, runs it read-only, and shows its work.</p>
+    ${mode && mode.demo && html`<p class="meta"><span class="pill warn">Demo: test database with planted
+      attacks</span>${!mode.grounding && html` <span class="pill err">Grounding check off</span>`}</p>`}
     <form onSubmit=${ask}>
       <select value=${db} onChange=${e => setDb(e.target.value)} aria-label="Database">
         ${dbs.map(d => html`<option value=${d}>${d}</option>`)}

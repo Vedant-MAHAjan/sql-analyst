@@ -1,4 +1,11 @@
-"""HTTP API and web page.  Run: .venv/bin/uvicorn serve.api:app --port 8008"""
+"""HTTP API and web page.  Run: .venv/bin/uvicorn serve.api:app --port 8008
+
+Demo mode (for recording the injection demo):
+  DEMO=attack            use the clone databases with planted injections
+                         (./data/setup_attack_dbs.sh first)
+  GROUNDING=0            turn off the answer grounding check
+"""
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,11 +17,19 @@ from agent.service import Agent
 
 WEB = Path(__file__).resolve().parent / "web"
 app = FastAPI(title="SQL Analyst")
+DEMO = os.environ.get("DEMO", "")
+GROUNDING = os.environ.get("GROUNDING", "1") != "0"
 
 
 @lru_cache
 def agent() -> Agent:
-    return Agent()
+    clones = {"bird": "bird_attack", "pagila": "pagila_attack"} if DEMO == "attack" else None
+    return Agent(databases=clones, grounding=GROUNDING)
+
+
+@app.get("/api/mode")
+def mode() -> dict:
+    return {"demo": DEMO or None, "grounding": GROUNDING}
 
 
 class AskIn(BaseModel):

@@ -32,5 +32,5 @@ attacks: .venv
 cache:  # refresh the committed cache after new runs
 	tar -czf data/model_cache.tar.gz -C runs cache
 
-serve: .venv
+serve: .venv  # DEMO=attack GROUNDING=0 make serve  for the injection demo
 	.venv/bin/uvicorn serve.api:app --port 8008

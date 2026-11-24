@@ -46,7 +46,7 @@ def chart_spec(columns: list[str], rows: list[tuple]) -> dict:
     """One value -> number; time + measure -> line; category + measure -> bar."""
     if not rows or not columns:
         return {"type": "table"}
-    if len(rows) == 1 and len(columns) == 1:
+    if len(rows) == 1 and len(columns) == 1 and _is_num(rows[0][0]):
         return {"type": "number", "value": jsonable(rows[0][0]), "label": columns[0]}
     num = [i for i in range(len(columns)) if all(_is_num(r[i]) or r[i] is None for r in rows)
            and any(_is_num(r[i]) for r in rows)]
@@ -127,6 +127,6 @@ def template_answer(columns: list[str], rows: list[tuple], truncated: bool) -> s
     def fmt(r):
         return "; ".join(f"{c} = {jsonable(v)}" for c, v in zip(columns, r))
     if len(rows) == 1:
-        return f"Result: {fmt(rows[0])}."
+        return f"Result: {fmt(rows[0]).rstrip('.')}."
     more = "+" if truncated else ""
     return f"{len(rows)}{more} rows. First: {fmt(rows[0])}."
