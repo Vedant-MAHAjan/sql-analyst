@@ -1,5 +1,5 @@
 # make setup      - database up, data downloaded and loaded, value indexes built
-# make reproduce  - rebuild the headline table from the committed model-call cache
+# make reproduce  - re-execute and re-score the committed predictions (no model needed)
 # make smoke      - 60-question regression gate (needs Ollama for uncached calls)
 # make attacks    - Phase 5 attack suite (needs Ollama)
 PY := .venv/bin/python
@@ -19,7 +19,7 @@ setup: .venv
 runs/cache:
 	mkdir -p runs && tar -xzf data/model_cache.tar.gz -C runs
 
-reproduce: .venv runs/cache
+reproduce: .venv
 	$(PY) -m eval.reproduce
 
 smoke: .venv runs/cache

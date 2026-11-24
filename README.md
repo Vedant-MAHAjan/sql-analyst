@@ -1,9 +1,26 @@
 # sql-analyst
 
-A text-to-SQL analyst agent over PostgreSQL, measured instead of demoed:
-every claim below is a number from a reproducible run, scored exactly as the
-BIRD benchmark scores it, with a paired significance test against its baseline.
-Models run locally (qwen2.5-coder via Ollama), so every run costs $0.
+**I built an AI data analyst, then spent most of the project trying to prove it
+couldn't be trusted.**
+
+You ask a business question in plain English. The agent writes SQL, runs it
+read-only, and answers with a chart. Plenty of demos do that. This project asks
+the harder question: *how often is it right, how does it fail, and what stops it
+from doing damage?*
+
+| What I tested | What I found |
+|---|---|
+| Is it accurate? | **51.8%** on a hard public benchmark, up from 47.4% for the plain version |
+| Is it consistent? | Same questions, four runs: right **51%** of the time on average, right every time on only **34%** |
+| Does adding a second AI "reviewer" help? | No. It scored **6 points lower** and took 4× as long in my test |
+| Can text inside the data hijack it? | Yes, at first: a film description made it reply with an attacker's word. A code check took this from **17.6% to 0%** of my planted attacks |
+| Can it damage the database? | **0 of 57** attacks I wrote succeeded with all safeguards on, and none changed any data |
+
+Independent personal project. Runs entirely on local models
+(qwen2.5-coder via Ollama) at $0. Evaluated on benchmarks, not in production.
+Every number below comes from a reproducible run, scored the way the
+[BIRD](https://github.com/bird-bench/mini_dev) benchmark scores it, with a paired
+significance test against its baseline.
 
 Progress log, one block per phase: [progress.md](progress.md).
 
@@ -57,22 +74,24 @@ temperature 0.7: 51.0% average single-run EX, **34% solved in all four runs**,
   unseen question set, not that BIRD scores are or aren't memorized.
 - **About 30% of BIRD "failures" are not model errors** (see taxonomy below).
 
-## Benchmark findings
+## Benchmark audit
 
-From the [gold audit](reports/gold_audit.md) and the
-[failure taxonomy](reports/phase6/failure_taxonomy.md):
+Before trusting a score, I audited the benchmark
+([gold audit](reports/gold_audit.md), [failure taxonomy](reports/phase6/failure_taxonomy.md)).
+Several issues were already reported upstream; this repo handles them and credits them:
 
-- The official PostgreSQL dump was written on a UTC+8 server; on a UTC server
-  5 gold queries silently return wrong results. Fixed by setting the database
-  timezone.
-- PostgreSQL's parallel aggregation makes float `AVG`/`SUM` differ in the last
-  bit between runs, so exact-match EX flips at random; disabling parallel query
-  makes scoring reproducible (and both scorers then agree on every question).
-- 89 gold queries use float4 `REAL`, so correct `numeric` answers score wrong;
+- **Timezone** ([#18](https://github.com/bird-bench/mini_dev/issues/18)): the PostgreSQL dump's timestamps are stored at
+  UTC+8, so on a UTC server 5 gold queries silently return wrong results. The
+  setup pins the database timezone.
+- **Unstable float scoring** ([#48](https://github.com/bird-bench/mini_dev/issues/48)): float `AVG`/`SUM` can change in the
+  last digits with the query plan, flipping exact-match scores. The setup pins
+  parallel query and memory settings, as that issue recommends.
+- **Duplicates** ([#17](https://github.com/bird-bench/mini_dev/issues/17)): questions 137 and 138 appear twice; paired tests
+  keep both rows.
+- 89 gold queries use float4 `REAL`, so correct `numeric` answers can score wrong;
   tolerant EX is reported beside the official number.
-- Question 788's gold changed meaning when transpiled from SQLite; questions
-  137 and 138 appear twice.
-- Of 50 hand-read failures: 14% gold errors, 10% ambiguous golds, 6% numeric
+- Question 788's PostgreSQL gold computes a different ratio from its SQLite gold.
+- Of 50 failures read one by one: 14% gold errors, 10% ambiguous golds, 6% numeric
   precision. The largest real category is output shape (16%): right data, extra
   or missing columns.
 
@@ -97,12 +116,14 @@ stating no value from the result did (0%).
 
 ```bash
 make setup        # Postgres in Docker, BIRD Mini-Dev (~800 MB) and Pagila, value index
-make reproduce    # rebuilds the results table from data/model_cache.tar.gz
+make reproduce    # re-runs every saved prediction and rebuilds the results table
 ```
 
-`make reproduce` re-executes and re-scores every configuration from the
-committed model outputs, so it needs Docker but not a GPU or Ollama, and
-reproduces the table exactly. Regenerating the model outputs needs
+`make reproduce` executes each run's saved SQL ([data/run_logs](data/run_logs))
+against a fresh database and scores it again. It needs Docker but not a GPU or
+Ollama, and fails if any EX score differs. Soft-F1 pairs rows by position, so it
+can move slightly on a fresh load when a query has no `ORDER BY` (held-out agent:
+91.6 vs 91.1); EX ignores row order and reproduces exactly. Regenerating the model outputs needs
 `ollama pull qwen2.5-coder:14b` (and `:7b`); local models are not guaranteed to
 give identical outputs across machines.
 
@@ -140,7 +161,7 @@ reports/    gold audit, per-phase summaries, phase6 results and taxonomy
   the held-out set, and prompts were frozen (hashes in
   [frozen_prompts.json](reports/phase6/frozen_prompts.json)) before it ran.
 - LiveSQLBench, the planned second benchmark, was not run.
-- The failure taxonomy was labelled by one reader.
+- The failure taxonomy was labelled by one reader, with AI assistance.
 
 Data: BIRD Mini-Dev (CC BY-SA 4.0), Pagila (PostgreSQL License). Neither is
 committed; `make setup` downloads them.

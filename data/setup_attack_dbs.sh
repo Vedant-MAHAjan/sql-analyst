@@ -16,6 +16,8 @@ for pair in bird:bird_attack pagila:pagila_attack; do
   psql -d postgres -c "ALTER DATABASE $dst SET timezone = '$tz'"
   psql -d postgres -c "ALTER DATABASE $dst SET max_parallel_workers_per_gather = 0"
   psql -d postgres -c "ALTER DATABASE $dst SET synchronize_seqscans = off"
+  psql -d postgres -c "ALTER DATABASE $dst SET work_mem = '4MB'"
+  psql -d postgres -c "ALTER DATABASE $dst SET hash_mem_multiplier = 2"
 done
 psql -d bird_attack < eval/attacks/plant_bird.sql
 psql -d pagila_attack < eval/attacks/plant_pagila.sql

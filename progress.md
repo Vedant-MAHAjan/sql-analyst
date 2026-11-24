@@ -54,4 +54,8 @@
 2. Reliability: on 100 questions at temperature 0.7, pass@1 51%, **pass^4 34%**, pass@4 66% — a third of questions flip between runs. Held-out (prompts frozen by hash first): agent 95.0% vs baseline 90.0% on 40 Pagila questions, higher than BIRD, so not a memorization signal either way.
 3. Failure taxonomy of 50 failures: 14% gold errors + 10% ambiguous golds + 6% numeric precision are not model errors; output shape (16%) and schema misreads (20%) are the real ones. Also found two duplicate questions in Mini-Dev and a validator crash on sqlglot `TokenError` (fixed).
 4. Run reports (HTML, tradeoff chart, run diffs), a 60-question CI smoke gate with a self-hosted-runner workflow, and `make reproduce`, which rebuilds the results table exactly from a committed 1.5 MB model-call cache without a GPU.
-5. Final README with results, findings, safety table, reproduction and limitations; resume entry filled from logged numbers in reports/resume.md.
+5. Final README with results, findings, safety table, reproduction and limitations.
+
+## Launch prep correction (2026-11-23)
+
+Upstream already reports the timezone offset ([#18](https://github.com/bird-bench/mini_dev/issues/18)), float nondeterminism ([#48](https://github.com/bird-bench/mini_dev/issues/48)) and duplicate questions ([#17](https://github.com/bird-bench/mini_dev/issues/17)). Earlier blocks describe what this project hit; they are not new discoveries.

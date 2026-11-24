@@ -49,3 +49,9 @@ with identical question, hint and gold SQL, so Mini-Dev has 498 distinct questio
 500 rows. Scores keep all 500 rows, as the official scripts do; paired tests key rows by
 (question_id, occurrence) so neither copy is dropped.
 
+## Prior reports
+
+Checked against the upstream tracker before publishing. The timezone offset was
+reported in [#18](https://github.com/bird-bench/mini_dev/issues/18) (maintainers confirmed the HKT setup), float nondeterminism
+in [#48](https://github.com/bird-bench/mini_dev/issues/48) (which also identifies `work_mem`; setup now pins it), and the
+duplicate questions in [#17](https://github.com/bird-bench/mini_dev/issues/17). These are not claimed as new findings.

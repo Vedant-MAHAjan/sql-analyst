@@ -6,5 +6,8 @@ ALTER DATABASE bird SET timezone = 'Asia/Shanghai';
 -- between runs and exact-match EX flips at random; scans also reorder rows.
 ALTER DATABASE bird SET max_parallel_workers_per_gather = 0;
 ALTER DATABASE bird SET synchronize_seqscans = off;
+-- Plan-affecting memory settings, pinned per bird-bench/mini_dev#48.
+ALTER DATABASE bird SET work_mem = '4MB';
+ALTER DATABASE bird SET hash_mem_multiplier = 2;
 \connect bird
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
